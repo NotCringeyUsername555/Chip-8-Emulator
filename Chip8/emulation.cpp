@@ -12,6 +12,7 @@ unsigned char gfx[64 * 32];
 unsigned char delay_timer;
 unsigned char sound_timer;
 unsigned short sp;
+SDL_Event eventS;
 unsigned char key[16];
 std::ifstream fs;
 SDL_Window * window;
@@ -118,13 +119,168 @@ public:
 			I = opcode & 0x0FFF;
 			break;
 		case 0xB:
-			pc = V[0] +opcode & 0x0FFF;
+			pc = V[0] + opcode & 0x0FFF;
 			break;
 		case 0xC:
 			V[opcode & 0x0F00 >> 8] = opcode & 0x00FF & (rand() % 255);
+			pc += 2;
 			break;
 		case 0xD:
+			// X V[opcode & 0x0F00 >> 8]  Y V[opcode & 0x00FF >> 4]
+			int height = opcode & 0x000F;
+			int x = opcode & 0x0F00 >> 8;
+			int y = opcode & 0x00F0 >> 4;
+			for (int i = V[y] * 64 + V[x]; i < V[y] * 64 + V[x] + (height * 64); i += 64) {
+				gfx[i] = *((char *)I);
+			}
+			pc += 2;
+		case 0xE:
+			int x = opcode & 0x0F00 >> 8;
+			char c = V[x];
+			switch (opcode & 0x00FF) {
+			case 0xA1:
+				SDL_PollEvent(&eventS);
+				switch (eventS.type) {
+				case SDL_SCANCODE_0:
+					if (c == '0') pc += 4;
+					else pc += 2;
+					break;
+				case SDL_SCANCODE_1:
+					if (c == '1') pc += 4;
+					else pc += 2;
+					break;
+				case SDL_SCANCODE_2:
+					if (c == '2') pc += 4;
+					else pc += 2;
+					break;
+				case SDL_SCANCODE_3:
+					if (c == '3') pc += 4;
+					else pc += 2;
+					break;
+				case SDL_SCANCODE_4:
+					if (c == '4') pc += 4;
+					else pc += 2;
+					break;
+				case SDL_SCANCODE_5:
+					if (c == '5') pc += 4;
+					else pc += 2;
+					break;
+				case SDL_SCANCODE_6:
+					if (c == '6') pc += 4;
+					else pc += 2;
+					break;
+				case SDL_SCANCODE_7:
+					if (c == '7') pc += 4;
+					else pc += 2;
+					break;
+				case SDL_SCANCODE_8:
+					if (c == '8') pc += 4;
+					else pc += 2;
+					break;
+				case SDL_SCANCODE_9:
+					if (c == '9') pc += 4;
+					else pc += 2;
+					break;
+				case SDL_SCANCODE_A:
+					if (c == 'A') pc += 4;
+					else pc += 2;
+					break;
+				case SDL_SCANCODE_B:
+					if (c == 'B') pc += 4;
+					else pc += 2;
+					break;
+				case SDL_SCANCODE_C:
+					if (c == 'C') pc += 4;
+					else pc += 2;
+					break;
+				case SDL_SCANCODE_D:
+					if (c == 'D') pc += 4;
+					else pc += 2;
+					break;
+				case SDL_SCANCODE_E:
+					if (c == 'E') pc += 4;
+					else pc += 2;
+					break;
+				case SDL_SCANCODE_F:
+					if (c == 'F') pc += 4;
+					else pc += 2;
+					break;
 
+				}
+
+				break;
+			case 0x9E:
+				switch (opcode & 0x00FF) {
+				case 0xA1:
+					SDL_PollEvent(&eventS);
+					switch (eventS.type) {
+					case SDL_SCANCODE_0:
+						if (c != '0') pc += 4;
+						else pc += 2;
+						break;
+					case SDL_SCANCODE_1:
+						if (c != '1') pc += 4;
+						else pc += 2;
+						break;
+					case SDL_SCANCODE_2:
+						if (c != '2') pc += 4;
+						else pc += 2;
+						break;
+					case SDL_SCANCODE_3:
+						if (c != '3') pc += 4;
+						else pc += 2;
+						break;
+					case SDL_SCANCODE_4:
+						if (c != '4') pc += 4;
+						else pc += 2;
+						break;
+					case SDL_SCANCODE_5:
+						if (c != '5') pc += 4;
+						else pc += 2;
+						break;
+					case SDL_SCANCODE_6:
+						if (c != '6') pc += 4;
+						else pc += 2;
+						break;
+					case SDL_SCANCODE_7:
+						if (c != '7') pc += 4;
+						else pc += 2;
+						break;
+					case SDL_SCANCODE_8:
+						if (c != '8') pc += 4;
+						else pc += 2;
+						break;
+					case SDL_SCANCODE_9:
+						if (c != '9') pc += 4;
+						else pc += 2;
+						break;
+					case SDL_SCANCODE_A:
+						if (c != 'A') pc += 4;
+						else pc += 2;
+						break;
+					case SDL_SCANCODE_B:
+						if (c != 'B') pc += 4;
+						else pc += 2;
+						break;
+					case SDL_SCANCODE_C:
+						if (c != 'C') pc += 4;
+						else pc += 2;
+						break;
+					case SDL_SCANCODE_D:
+						if (c != 'D') pc += 4;
+						else pc += 2;
+						break;
+					case SDL_SCANCODE_E:
+						if (c != 'E') pc += 4;
+						else pc += 2;
+						break;
+					case SDL_SCANCODE_F:
+						if (c != 'F') pc += 4;
+						else pc += 2;
+						break;
+					}
+				break;
+			}
 		}
 	}
 };
@@ -138,4 +294,4 @@ int main(int argc, char **argv) {
 			drawGraphics();
 	}
 	return 0;
-}
+}             
