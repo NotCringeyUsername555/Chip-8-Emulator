@@ -16,7 +16,25 @@ SDL_Event eventS;
 unsigned char key[16];
 std::ifstream fs;
 SDL_Window * window;
-
+unsigned char chip8_fontset[80] =
+{
+  0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
+  0x20, 0x60, 0x20, 0x20, 0x70, // 1
+  0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
+  0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3
+  0x90, 0x90, 0xF0, 0x10, 0x10, // 4
+  0xF0, 0x80, 0xF0, 0x10, 0xF0, // 5
+  0xF0, 0x80, 0xF0, 0x90, 0xF0, // 6
+  0xF0, 0x10, 0x20, 0x40, 0x40, // 7
+  0xF0, 0x90, 0xF0, 0x90, 0xF0, // 8
+  0xF0, 0x90, 0xF0, 0x10, 0xF0, // 9
+  0xF0, 0x90, 0xF0, 0x90, 0x90, // A
+  0xE0, 0x90, 0xE0, 0x90, 0xE0, // B
+  0xF0, 0x80, 0x80, 0x80, 0xF0, // C
+  0xE0, 0x90, 0x90, 0x90, 0xE0, // D
+  0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
+  0xF0, 0x80, 0xF0, 0x80, 0x80  // F
+};
 void drawGraphics() {
 
 }
@@ -145,157 +163,59 @@ public:
 			switch (opcode & 0x00FF) {
 			case 0xA1:
 				SDL_PollEvent(&eventS);
-				switch (eventS.type) {
-				case SDL_SCANCODE_0:
-					if (c == '0') pc += 4;
-					else pc += 2;
-					break;
-				case SDL_SCANCODE_1:
-					if (c == '1') pc += 4;
-					else pc += 2;
-					break;
-				case SDL_SCANCODE_2:
-					if (c == '2') pc += 4;
-					else pc += 2;
-					break;
-				case SDL_SCANCODE_3:
-					if (c == '3') pc += 4;
-					else pc += 2;
-					break;
-				case SDL_SCANCODE_4:
-					if (c == '4') pc += 4;
-					else pc += 2;
-					break;
-				case SDL_SCANCODE_5:
-					if (c == '5') pc += 4;
-					else pc += 2;
-					break;
-				case SDL_SCANCODE_6:
-					if (c == '6') pc += 4;
-					else pc += 2;
-					break;
-				case SDL_SCANCODE_7:
-					if (c == '7') pc += 4;
-					else pc += 2;
-					break;
-				case SDL_SCANCODE_8:
-					if (c == '8') pc += 4;
-					else pc += 2;
-					break;
-				case SDL_SCANCODE_9:
-					if (c == '9') pc += 4;
-					else pc += 2;
-					break;
-				case SDL_SCANCODE_A:
-					if (c == 'A') pc += 4;
-					else pc += 2;
-					break;
-				case SDL_SCANCODE_B:
-					if (c == 'B') pc += 4;
-					else pc += 2;
-					break;
-				case SDL_SCANCODE_C:
-					if (c == 'C') pc += 4;
-					else pc += 2;
-					break;
-				case SDL_SCANCODE_D:
-					if (c == 'D') pc += 4;
-					else pc += 2;
-					break;
-				case SDL_SCANCODE_E:
-					if (c == 'E') pc += 4;
-					else pc += 2;
-					break;
-				case SDL_SCANCODE_F:
-					if (c == 'F') pc += 4;
-					else pc += 2;
-					break;
-
+				int x = opcode & 0x0F00 >> 8;
+				const char * c = SDL_GetKeyName(SDL_GetKeyFromScancode((SDL_Scancode)eventS.type)));
+				char c2 = *c;
+				if (V[x] == c2) {
+					pc += 4;
 				}
-
+				else
+					pc += 2;
 				break;
 			case 0x9E:
-				switch (opcode & 0x00FF) {
-				case 0xA1:
-					SDL_PollEvent(&eventS);
-					switch (eventS.type) {
-					case SDL_SCANCODE_0:
-						if (c != '0') pc += 4;
-						else pc += 2;
-						break;
-					case SDL_SCANCODE_1:
-						if (c != '1') pc += 4;
-						else pc += 2;
-						break;
-					case SDL_SCANCODE_2:
-						if (c != '2') pc += 4;
-						else pc += 2;
-						break;
-					case SDL_SCANCODE_3:
-						if (c != '3') pc += 4;
-						else pc += 2;
-						break;
-					case SDL_SCANCODE_4:
-						if (c != '4') pc += 4;
-						else pc += 2;
-						break;
-					case SDL_SCANCODE_5:
-						if (c != '5') pc += 4;
-						else pc += 2;
-						break;
-					case SDL_SCANCODE_6:
-						if (c != '6') pc += 4;
-						else pc += 2;
-						break;
-					case SDL_SCANCODE_7:
-						if (c != '7') pc += 4;
-						else pc += 2;
-						break;
-					case SDL_SCANCODE_8:
-						if (c != '8') pc += 4;
-						else pc += 2;
-						break;
-					case SDL_SCANCODE_9:
-						if (c != '9') pc += 4;
-						else pc += 2;
-						break;
-					case SDL_SCANCODE_A:
-						if (c != 'A') pc += 4;
-						else pc += 2;
-						break;
-					case SDL_SCANCODE_B:
-						if (c != 'B') pc += 4;
-						else pc += 2;
-						break;
-					case SDL_SCANCODE_C:
-						if (c != 'C') pc += 4;
-						else pc += 2;
-						break;
-					case SDL_SCANCODE_D:
-						if (c != 'D') pc += 4;
-						else pc += 2;
-						break;
-					case SDL_SCANCODE_E:
-						if (c != 'E') pc += 4;
-						else pc += 2;
-						break;
-					case SDL_SCANCODE_F:
-						if (c != 'F') pc += 4;
-						else pc += 2;
-						break;
-					}
+				SDL_PollEvent(&eventS);
+				int x = opcode & 0x0F00 >> 8;
+				const char * c = SDL_GetKeyName(SDL_GetKeyFromScancode((SDL_Scancode)eventS.type)));
+				char c2 = *c;
+				if (V[x] != c2) pc += 4;
+				else pc += 2;
 				break;
-				case 0xF:
-					switch (opcode & 0x00FF) {
-					case 7:
-						V[opcode & 0x0F00 >> 8] = delay_timer;
-						pc += 2;
-						break;
-					case 0xA:
-						int x = opcode & 0x0F00 >> 8;
+			}
+		case 0xF:
+			switch (opcode & 0x00FF) {
+				case 7:
+					V[opcode & 0x0F00 >> 8] = delay_timer;
+					pc += 2;
+					break;
+				case 0xA:
+				{
+					int x = opcode & 0x0F00 >> 8;
+					do {
+						SDL_PollEvent(&eventS);
+					} while (eventS.type == NULL);
+					SDL_Keycode key = SDL_GetKeyFromScancode((SDL_Scancode)eventS.type);
+					const char * c = SDL_GetKeyName(key);
+					V[x] = *c;
+					break;
+				}
+				case 0x15:
+					int x = opcode & 0x0F00 >> 8;
+					delay_timer = V[x];
+					break;
+				case 0x1E:
+					int x = opcode & 0x0F00 >> 8;
+					I += V[x];
+					break;
+				case 0x29:
+					int x = opcode & 0x0F00 >> 8;
+					char c = *((char *)V[x]);
+					int loc = (int)c;
+					I = (unsigned int)&chip8_fontset[loc * 5];
+					break;
+				//TODO: Implement 0x33
+				case 0x55:
 
-						break;
-					}
+
 			}
 		}
 	}
