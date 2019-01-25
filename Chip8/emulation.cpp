@@ -79,6 +79,7 @@ public:
 			break;
 		case 7:
 			V[opcode & 0x0F00 >> 8] += V[opcode & 0x00FF];
+			pc += 2;
 			break;
 		case 8:
 			switch (opcode & 0x000F) {
@@ -87,15 +88,19 @@ public:
 				break;
 			case 1:
 				V[opcode & 0x0F00 >> 8] |= V[opcode & 0x00F0 >> 4];
+				pc += 2;
 				break;
 			case 2:
 				V[opcode & 0x0F00 >> 8] &= V[opcode & 0x00F0 >> 4];
+				pc += 2;
 				break;
 			case 3:
 				V[opcode & 0x0F00 >> 8] = pow(V[opcode & 0x0F00 >> 8], V[opcode & 0x00F0 >> 4]);
+				pc += 2;
 				break;
 			case 4:
 				V[opcode & 0x0F00 >> 8] += V[opcode & 0x00F0 >> 4];
+				pc += 2;
 				break;
 			case 5:
 				V[opcode & 0x0F00 >> 8] -= V[opcode & 0x00FF >> 4];
@@ -280,6 +285,17 @@ public:
 						break;
 					}
 				break;
+				case 0xF:
+					switch (opcode & 0x00FF) {
+					case 7:
+						V[opcode & 0x0F00 >> 8] = delay_timer;
+						pc += 2;
+						break;
+					case 0xA:
+						int x = opcode & 0x0F00 >> 8;
+
+						break;
+					}
 			}
 		}
 	}
