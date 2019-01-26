@@ -42,7 +42,9 @@ unsigned char chip8_fontset[80] =
 void drawGraphics() {
 	for (int i = 0; i < 8; i++) {
 		for (int i2 = 0; i2 < 4; i2++) {
-			
+			for (int i3 = 0; i3 < 8; i3++) {
+
+			}
 		}
 	}
 }
@@ -165,7 +167,7 @@ public:
 			int height = opcode & 0x000F;
 			int y = opcode & 0x00F0 >> 4;
 			for (int i = V[y] * 64 + V[x]; i < V[y] * 64 + V[x] + (height * 64); i += 64) {
-				gfx[i] = *((char *)I);
+				gfx[i] = memory[I];
 			}
 			pc += 2;
 		}
@@ -221,8 +223,7 @@ public:
 			case 0x29:
 			{
 				char c = *((char *)V[x]);
-				int loc = (int)c;
-				I = (unsigned int)&chip8_fontset[loc * 5];
+				I = memory[c * 5];
 				pc += 2;
 				break;
 			}
@@ -234,7 +235,7 @@ public:
 				break;
 			case 0x55:
 				for (int i = 0; i < x; i++) {
-					*((char *)I + i) = V[i];
+					memory[I + i] = V[i];
 				}
 				pc += 2;
 				break;
