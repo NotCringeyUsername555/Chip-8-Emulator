@@ -11,7 +11,7 @@ unsigned char memory[4096];
 unsigned char V[16];
 unsigned short I;
 unsigned short pc = 0x200;
-unsigned char gfx[8 * 4];
+bool gfx[64][32];
 unsigned char delay_timer;
 unsigned char sound_timer;
 unsigned short sp;
@@ -40,19 +40,29 @@ unsigned char chip8_fontset[80] =
   0xF0, 0x80, 0xF0, 0x80, 0x80  // F
 };
 void drawGraphics() {
-	for (int i = 0; i < 8; i++) {
-		for (int i2 = 0; i2 < 4; i2++) {
-			for (int i3 = 0; i3 < 8; i3++) {
-
+	SDL_SetRenderDrawColor(render, 255, 255, 255, 0);
+	SDL_RenderClear(render);
+	SDL_SetRenderDrawColor(render, 0, 0, 0, 0);
+	for (int i = 0; i < 64; i++) {
+		for (int i2 = 0; i2 < 32; i2++) {
+			if (gfx[i][i2]) {
+				SDL_Rect r;
+				r.x = i * 10;
+				r.y = i2 * 10;
+				r.w = 10;
+				r.h = 10;
+				SDL_RenderFillRect(render, &r);
 			}
 		}
 	}
+	SDL_RenderPresent(render);
+
 }
 void init() {
 	SDL_Init(SDL_INIT_EVERYTHING);
-	window = SDL_CreateWindow("Chip8", 100, 100, 650, 320, 0);
+	window = SDL_CreateWindow("Chip8", 100, 100, 640, 320, 0);
 	srand(time(NULL));
-	render = SDL_GetRenderer(window);
+	render = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 }
 class myChip {
 public:
@@ -135,17 +145,21 @@ public:
 				break;
 			case 5:
 				V[opcode & 0x0F00 >> 8] -= V[opcode & 0x00FF >> 4];
+				pc += 2;
 				break;
 			case 6:
 				V[15] = V[opcode & 0x0F00 >> 8] % 2;
 				V[opcode & 0x0F00 >> 8] >>= 1;
+				pc += 2;
 				break;
 			case 7:
 				V[opcode & 0x0F00 >> 8] = V[opcode & 0x0F00 >> 8] - V[opcode & 0x00FF >> 4];
+				pc += 2;
 				break;
 			case 0xE:
 				V[15] = V[opcode & 0x0F00 >> 8] >> 7;
 				V[opcode & 0x0F00 >> 8] <<= 1;
+				pc += 2;
 				break;
 			}
 		case 9:
@@ -166,8 +180,15 @@ public:
 		{
 			int height = opcode & 0x000F;
 			int y = opcode & 0x00F0 >> 4;
-			for (int i = V[y] * 64 + V[x]; i < V[y] * 64 + V[x] + (height * 64); i += 64) {
-				gfx[i] = memory[I];
+			for (int i = 0; i < height; i++) {
+				for (int i2 = x; i2 < x + 8; i2++) {
+					gfx[i2][i] = ((memory[I] >> i2) & 1 == 1)?true:false;
+				}
+			}
+			for (int i = 0; i < 64; i++) {
+				for (int i2 = 0; i2 < 32; i2++) {
+					std::cout << gfx[i][i2];
+				}
 			}
 			pc += 2;
 		}
@@ -241,7 +262,7 @@ public:
 				break;
 			case 0x65:
 				for (int i = 0; i < x; i++) {
-					 V[i] = *((char *)I + i);
+					 V[i] = memory[I + i];
 				}
 				pc += 2;
 				break;
