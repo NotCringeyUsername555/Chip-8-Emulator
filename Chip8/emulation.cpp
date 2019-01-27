@@ -62,6 +62,10 @@ void init() {
 	SDL_Init(SDL_INIT_EVERYTHING);
 	window = SDL_CreateWindow("Chip8", 100, 100, 640, 320, 0);
 	srand(time(NULL));
+	for (int i = 0; i < 80; i++) {
+		memory[i] = chip8_fontset[i];
+	}
+	I = 5;
 	render = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 }
 class myChip {
@@ -90,21 +94,21 @@ public:
 			I = opcode & 0x0FFF;
 			pc += 2;
 			break;
-		//Jumps to a memory address
+			//Jumps to a memory address
 		case 1:
 			pc = opcode & 0X0FFF;
 			break;
-		//Calls another memory address that can be returned from
+			//Calls another memory address that can be returned from
 		case 2:
 			push(pc);
 			pc = opcode & 0x0FFF;
 			break;
-		//checks if a V var and NN are equal are equal
+			//checks if a V var and NN are equal are equal
 		case 3:
 			if (V[opcode >> 8 & 0x0F] != opcode & 0x00FF) pc += 4;
 			else pc += 2;
 			break;
-		//checks if 2 V vars are not equal
+			//checks if 2 V vars are not equal
 		case 4:
 			if (V[opcode >> 8 & 0x0F] == V[opcode & 0x00FF]) pc += 4;
 			else pc += 2;
@@ -182,7 +186,7 @@ public:
 			int y = opcode & 0x00F0 >> 4;
 			for (int i = 0; i < height; i++) {
 				for (int i2 = x; i2 < x + 8; i2++) {
-					gfx[i2][i] = ((memory[I] >> i2) & 1 == 1)?true:false;
+					gfx[i2][i] = ((memory[I] >> i2) & 1 == 1) ? true : false;
 				}
 			}
 			for (int i = 0; i < 64; i++) {
@@ -262,23 +266,23 @@ public:
 				break;
 			case 0x65:
 				for (int i = 0; i < x; i++) {
-					 V[i] = memory[I + i];
+					V[i] = memory[I + i];
 				}
 				pc += 2;
 				break;
 			}
-			}
-			if (delay_timer > 0)
-				--delay_timer;
+		}
+		if (delay_timer > 0)
+			--delay_timer;
 
-			if (sound_timer > 0)
-			{
-				if (sound_timer == 1)
-					printf("BEEP!\n");
-				--sound_timer;
-			}
+		if (sound_timer > 0)
+		{
+			if (sound_timer == 1)
+				printf("BEEP!\n");
+			--sound_timer;
+		}
 	}
-		
+
 };
 int main(int argc, char **argv) {
 	myChip myChip8;
@@ -290,4 +294,4 @@ int main(int argc, char **argv) {
 			drawGraphics();
 	}
 	return 0;
-}             
+}
