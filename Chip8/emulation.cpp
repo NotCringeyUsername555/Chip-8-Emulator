@@ -1,8 +1,8 @@
 #include "SDL.h"
 #include <fstream>
 #include <sstream>
-#include <bitset>
 #include <stdio.h>
+#include <bitset>
 #include <iostream>
 #include <time.h>
 #include <string>
