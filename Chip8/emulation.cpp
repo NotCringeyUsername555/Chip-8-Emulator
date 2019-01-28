@@ -62,19 +62,26 @@ void init() {
 	SDL_Init(SDL_INIT_EVERYTHING);
 	window = SDL_CreateWindow("Chip8", 100, 100, 640, 320, 0);
 	srand(time(NULL));
+	for (int i = 0; i < 4096; i++) {
+		memory[i] = 0;
+	}
 	for (int i = 0; i < 80; i++) {
 		memory[i] = chip8_fontset[i];
 	}
-	I = 5;
+	for (int i = 0; i < 64; i++) {
+		for (int i2 = 0; i2 < 32; i2++) {
+			gfx[i][i2] = false;
+		}
+	}
 	render = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 }
 class myChip {
 public:
-	bool drawFlag;
+	bool drawFlag = true;
 	void loadGame(const char * c) {
 		std::ifstream is;
 		is.open("C:/Users/Ri03/source/repos/Chip-8-Emulator/x64/Debug/test.ch8", std::ios::binary);
-		is.read((char *)memory, 4096);
+		is.read((char *)(memory + 0x200), 4096);
 		is.close();
 	}
 	void push(char c) {
@@ -87,12 +94,26 @@ public:
 		return c;
 	}
 	void emulateCycle() {
-		opcode = memory[pc] << 8 | memory[pc + 1];
+		opcode = (memory[pc] << 8) | memory[pc + 1];
 		int x = opcode & 0x0F00 >> 8;
 		switch (opcode >> 12) {
 		case 0:
-			I = opcode & 0x0FFF;
-			pc += 2;
+			if (opcode & 0x00F0 == 0xE0) {
+				if (opcode & 0x000F == 0xE) {
+					pc = pop();
+				}
+				else {
+					for (int i = 0; i < 64; i++) {
+						for (int i2 = 0; i2 < 32; i2++) {
+							gfx[i][i2] = false;
+						}
+					}
+				}
+			}
+			else {
+				I = opcode & 0x0FFF;
+				pc += 2;
+			}
 			break;
 			//Jumps to a memory address
 		case 1:
@@ -115,11 +136,11 @@ public:
 			break;
 
 		case 5:
-			if (V[opcode & 0x0F00 >> 8] != V[opcode & 0x00F0 >> 8]) pc += 2;
+			if (V[opcode & 0x0F00 >> 8] != V[opcode & 0x00F0 >> 8]) pc += 4;
 			pc += 2;
 			break;
 		case 6:
-			if (V[opcode & 0x0F00 >> 8] != V[opcode & 0x00F0 >> 8]) pc += 2;
+			if (V[opcode & 0x0F00 >> 8] != V[opcode & 0x00F0 >> 8]) pc += 4;
 			pc += 2;
 			break;
 		case 7:
@@ -182,16 +203,12 @@ public:
 		case 0xD:
 			// X V[opcode & 0x0F00 >> 8]  Y V[opcode & 0x00FF >> 4]
 		{
+			std::cout << "fuck me";
 			int height = opcode & 0x000F;
 			int y = opcode & 0x00F0 >> 4;
 			for (int i = 0; i < height; i++) {
-				for (int i2 = x; i2 < x + 8; i2++) {
-					gfx[i2][i] = ((memory[I] >> i2) & 1 == 1) ? true : false;
-				}
-			}
-			for (int i = 0; i < 64; i++) {
-				for (int i2 = 0; i2 < 32; i2++) {
-					std::cout << gfx[i][i2];
+				for (int i2 = 0; i2 < 8; i2++) {
+					gfx[i2 + V[x]][i + V[y]] = ((memory[I + i] >> i2) & 1 == 1);
 				}
 			}
 			pc += 2;
