@@ -136,17 +136,17 @@ public:
 				}
 			}
 			else {
-				//I = opcode & 0x0FFF;
+				I = opcode & 0x0FFF;
 			}
 			break;
 			//Jumps to a memory address
 		case 1:
-			pc = opcode & 0X0FFF - 2;
+			pc = (opcode & 0X0FFF) - 2;
 			break;
 			//Calls another memory address that can be returned from
 		case 2:
 			push(pc);
-			pc = opcode & 0x0FFF - 2;
+			pc = (opcode & 0x0FFF) - 2;
 			break;
 			//checks if a V var and NN are equal are equal
 		case 3:
