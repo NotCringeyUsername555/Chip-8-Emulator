@@ -158,13 +158,13 @@ public:
 			break;
 
 		case 5:
-			if (V[opcode & 0x0F00 >> 8] != V[opcode & 0x00F0 >> 8]) pc += 2;
+			if (V[opcode & 0x0F00 >> 8] == V[opcode & 0x00F0 >> 8]) pc += 2;
 			break;
 		case 6:
 			V[opcode & 0x0F00 >> 8] = opcode & 0x00FF
 			break;
 		case 7:
-			V[opcode & 0x0F00 >> 8] += V[opcode & 0x00FF];
+			V[opcode & 0x0F00 >> 8] += opcode & 0x00FF;
 			break;
 		case 8:
 			switch (opcode & 0x000F) {
