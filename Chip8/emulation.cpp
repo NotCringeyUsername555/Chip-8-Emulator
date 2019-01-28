@@ -104,13 +104,11 @@ public:
 		is.close();
 	}
 	void push(int c) {
-		std::cout << "-" << (int)c << "-";
 		key[sp] = c;
 		sp++;
 	}
 	int pop() {
 		int c = key[sp - 1];
-		std::cout <<  "poping-" << (int)key[sp - 1] << "-";
 		key[sp - 1] = 0;
 		sp--;
 		return c;
@@ -118,17 +116,20 @@ public:
 	void emulateCycle() {
 		opcode = (memory[pc] << 8);
 		opcode |= memory[pc + 1];
-		int x = opcode & 0x0F00 >> 8;
+		int x = (opcode & 0x0F00) >> 8;
+		int y = (opcode & 0x00F0) >> 4;
 		printf("%04x", opcode);
 		std::cout << "    " << pc << std::endl;
 		switch (opcode >> 12) {
-		printf("%04x", opcode >> 12);
+			printf("%04x", opcode >> 12);
 		case 0:
+			//returns
 			if ((opcode & 0x00FF) == 0xEE) {
 				pc = pop();
 				std::cout << pc << " new pc" << std::endl;
 			}
-			else if((opcode & 0x00F0) == 0xE0) {
+			//clears the screen
+			else if ((opcode & 0x00F0) == 0xE0) {
 				for (int i = 0; i < 64; i++) {
 					for (int i2 = 0; i2 < 32; i2++) {
 						gfx[i][i2] = false;
@@ -136,6 +137,7 @@ public:
 				}
 			}
 			else {
+				//does a bunch of shit I dont understand
 				I = opcode & 0x0FFF;
 			}
 			break;
@@ -150,52 +152,52 @@ public:
 			break;
 			//checks if a V var and NN are equal are equal
 		case 3:
-			if (V[opcode >> 8 & 0x0F] == opcode & 0x00FF) pc += 2;
+			if (V[x] == (opcode & 0x00FF)) pc += 2;
 			break;
-			//checks if 2 V vars are not equal
+			//checks if 2 V vars are equal
 		case 4:
-			if (V[(opcode >> 8) & 0x0F] != opcode & 0x00FF) pc += 2;
+			if (V[x] != (opcode & 0x00FF)) pc += 2;
 			break;
 
 		case 5:
-			if (V[opcode & 0x0F00 >> 8] == V[opcode & 0x00F0 >> 8]) pc += 2;
+			if (V[x] == V[y]) pc += 2;
 			break;
 		case 6:
-			V[opcode & 0x0F00 >> 8] = opcode & 0x00FF
+			V[x] = (opcode & 0x00FF);
 			break;
 		case 7:
-			V[opcode & 0x0F00 >> 8] += opcode & 0x00FF;
+			V[x] += (opcode & 0x00FF);
 			break;
 		case 8:
 			switch (opcode & 0x000F) {
 			case 0:
-				V[opcode & 0x0F00 >> 8] = V[opcode & 0x00F0 >> 4];
+				V[x] = V[y];
 				break;
 			case 1:
-				V[opcode & 0x0F00 >> 8] |= V[opcode & 0x00F0 >> 4];
+				V[x] |= V[y];
 				break;
 			case 2:
-				V[opcode & 0x0F00 >> 8] &= V[opcode & 0x00F0 >> 4];
+				V[x] &= V[y];
 				break;
 			case 3:
-				V[opcode & 0x0F00 >> 8] = pow(V[opcode & 0x0F00 >> 8], V[opcode & 0x00F0 >> 4]);
+				V[x] = pow(V[x], V[y]);
 				break;
 			case 4:
-				V[opcode & 0x0F00 >> 8] += V[opcode & 0x00F0 >> 4];
+				V[x] += V[y];
 				break;
 			case 5:
-				V[opcode & 0x0F00 >> 8] -= V[opcode & 0x00FF >> 4];
+				V[x] -= V[y];
 				break;
 			case 6:
-				V[15] = V[opcode & 0x0F00 >> 8] % 2;
-				V[opcode & 0x0F00 >> 8] >>= 1;
+				V[15] = V[x] % 2;
+				V[x] >>= 1;
 				break;
 			case 7:
-				V[opcode & 0x0F00 >> 8] = V[opcode & 0x0F00 >> 8] - V[opcode & 0x00FF >> 4];
+				V[x] = V[x] - V[opcode & 0x00FF >> 4];
 				break;
 			case 0xE:
-				V[15] = V[opcode & 0x0F00 >> 8] >> 7;
-				V[opcode & 0x0F00 >> 8] <<= 1;
+				V[15] = V[x] >> 7;
+				V[x] <<= 1;
 				break;
 			}
 			break;
@@ -205,19 +207,21 @@ public:
 			I = opcode & 0x0FFF;
 			break;
 		case 0xB:
-			pc = V[0] + opcode & 0x0FFF;
+			pc = V[0] + (opcode & 0x0FFF);
 			break;
 		case 0xC:
-			V[opcode & 0x0F00 >> 8] = opcode & 0x00FF & (rand() % 255);
+			V[x] = opcode & 0x00FF & (rand() % 255);
 			break;
 		case 0xD:
 			// X V[opcode & 0x0F00 >> 8]  Y V[opcode & 0x00FF >> 4]
 		{
 			int height = opcode & 0x000F;
-			int y = opcode & 0x00F0 >> 4;
+			V[0xF] = 0;
 			for (int i = 0; i < height; i++) {
 				for (int i2 = 0; i2 < 8; i2++) {
-					gfx[i2 + V[x]][i + V[y]] = ((memory[I + i] >> i2) & 1 == 1);
+					bool b = gfx[(8 - i2) + V[x]][i + V[y]];
+					gfx[(8 - i2) + V[x]][i + V[y]] = ((memory[I + i] >> i2) & 1 == 1);
+					if (b != gfx[(8 - i2) + V[x]][i + V[y]]) V[0xF] = 1;
 				}
 			}
 		}
@@ -246,7 +250,7 @@ public:
 		case 0xF:
 			switch (opcode & 0x00FF) {
 			case 7:
-				V[opcode & 0x0F00 >> 8] = delay_timer;
+				V[x] = delay_timer;
 				break;
 			case 0xA:
 			{
@@ -304,6 +308,7 @@ int main(int argc, char **argv) {
 	myChip myChip8;
 	init();
 	myChip8.loadGame("test.ch");
+	I = 10;
 	for (;;) {
 		myChip8.emulateCycle();
 		if (myChip8.drawFlag)
