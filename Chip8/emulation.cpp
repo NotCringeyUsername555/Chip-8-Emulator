@@ -150,18 +150,18 @@ public:
 			break;
 			//checks if a V var and NN are equal are equal
 		case 3:
-			if (V[opcode >> 8 & 0x0F] != opcode & 0x00FF) pc += 2;
+			if (V[opcode >> 8 & 0x0F] == opcode & 0x00FF) pc += 2;
 			break;
 			//checks if 2 V vars are not equal
 		case 4:
-			if (V[(opcode >> 8) & 0x0F] == V[opcode & 0x00FF]) pc += 2;
+			if (V[(opcode >> 8) & 0x0F] != opcode & 0x00FF) pc += 2;
 			break;
 
 		case 5:
 			if (V[opcode & 0x0F00 >> 8] != V[opcode & 0x00F0 >> 8]) pc += 2;
 			break;
 		case 6:
-			if (V[opcode & 0x0F00 >> 8] == opcode & 0x00FF) pc += 2;
+			V[opcode & 0x0F00 >> 8] = opcode & 0x00FF
 			break;
 		case 7:
 			V[opcode & 0x0F00 >> 8] += V[opcode & 0x00FF];
