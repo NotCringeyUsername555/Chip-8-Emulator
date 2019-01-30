@@ -15,7 +15,7 @@ unsigned int pc = 0x200;
 bool gfx[64][32];
 unsigned short delay_timer;
 unsigned short sound_timer;
-unsigned short sp;
+unsigned short sp = 0;
 SDL_Renderer * render;
 SDL_Event eventS;
 int key[16];
@@ -75,7 +75,7 @@ void init() {
 		}
 	}
 	for (int i = 0x200; i < 4096; i++) {
-		std::cout << memory[i] << " ";
+		//std::cout << memory[i] << " ";
 	}
 	render = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 }
@@ -104,29 +104,29 @@ public:
 		is.close();
 	}
 	void push(int c) {
-		key[sp] = c;
-		sp++;
+		std::cout << c;
+		key[sp++] = c;
 	}
 	int pop() {
-		int c = key[sp - 1];
-		key[sp - 1] = 0;
-		sp--;
+		int c = key[--sp];
+		key[sp] = 0;
 		return c;
 	}
 	void emulateCycle() {
 		opcode = (memory[pc] << 8);
 		opcode |= memory[pc + 1];
+		printf("%.4x\n", opcode);
 		int x = (opcode & 0x0F00) >> 8;
 		int y = (opcode & 0x00F0) >> 4;
-		printf("%04x", opcode);
-		std::cout << "    " << pc << std::endl;
+		//printf("%04x", opcode);
+		//std::cout << "    " << pc << std::endl;
 		switch (opcode >> 12) {
-			printf("%04x", opcode >> 12);
+			//printf("%04x", opcode >> 12);
 		case 0:
 			//returns
 			if ((opcode & 0x00FF) == 0xEE) {
 				pc = pop();
-				std::cout << pc << " new pc" << std::endl;
+				//	std::cout << pc << " new pc" << std::endl;
 			}
 			//clears the screen
 			else if ((opcode & 0x00F0) == 0xE0) {
@@ -138,7 +138,6 @@ public:
 			}
 			else {
 				//does a bunch of shit I dont understand
-				I = opcode & 0x0FFF;
 			}
 			break;
 			//Jumps to a memory address
@@ -152,13 +151,13 @@ public:
 			break;
 			//checks if a V var and NN are equal are equal
 		case 3:
-			if (V[x] == (opcode & 0x00FF)) pc += 2;
+			if (V[x] == (opcode & 0x00FF))
+				pc += 2;
 			break;
 			//checks if 2 V vars are equal
 		case 4:
 			if (V[x] != (opcode & 0x00FF)) pc += 2;
 			break;
-
 		case 5:
 			if (V[x] == V[y]) pc += 2;
 			break;
@@ -180,29 +179,37 @@ public:
 				V[x] &= V[y];
 				break;
 			case 3:
-				V[x] = pow(V[x], V[y]);
+				V[x] = V[x] ^ V[y];
 				break;
 			case 4:
 				V[x] += V[y];
+				V[0xf] = (255 < V[x] || V[x] < 0);
 				break;
 			case 5:
+				if (V[x] > V[y]) {
+					V[0xf] = 1;
+				}
+				else V[0xf] = 0;
 				V[x] -= V[y];
+				//std::cout << "this is the value: " << (int)V[0xf] << std::endl;
 				break;
 			case 6:
-				V[15] = V[x] % 2;
-				V[x] >>= 1;
+				V[0xF] = V[x] % 2;
+				V[x] /= 2;
 				break;
 			case 7:
-				V[x] = V[x] - V[opcode & 0x00FF >> 4];
+				V[0xF] = 0;
+				if (V[y] > V[x]) V[0xF] = 1;
+				V[x] = V[x] - V[y];
 				break;
 			case 0xE:
 				V[15] = V[x] >> 7;
-				V[x] <<= 1;
+				V[x] *= 2;
 				break;
 			}
 			break;
 		case 9:
-			if (V[(opcode >> 8) & 0x0F] == V[opcode & 0x00F0] >> 4) pc += 2;
+			if (V[x] != V[y]) pc += 2;
 		case 0xA:
 			I = opcode & 0x0FFF;
 			break;
@@ -210,7 +217,7 @@ public:
 			pc = V[0] + (opcode & 0x0FFF);
 			break;
 		case 0xC:
-			V[x] = opcode & 0x00FF & (rand() % 255);
+			V[x] = (opcode & 0x00FF) & (rand() % 255);
 			break;
 		case 0xD:
 			// X V[opcode & 0x0F00 >> 8]  Y V[opcode & 0x00FF >> 4]
@@ -270,24 +277,29 @@ public:
 				break;
 			case 0x29:
 			{
-				char c = memory[V[x]];
+				int c = V[x];
 				I = memory[c * 5];
 				break;
 			}
 			case 0x33:
 				memory[I] = V[x] / 100;
+				std::cout << "\n" << "memory[I] = " << (int)memory[I];
 				memory[I + 1] = (V[x] / 10) % 10;
 				memory[I + 2] = (V[x] % 100) % 10;
 				break;
 			case 0x55:
-				for (int i = 0; i < x; i++) {
+				for (int i = 0; i < x + 1; i++) {
 					memory[I + i] = V[i];
 				}
 				break;
 			case 0x65:
-				for (int i = 0; i < x; i++) {
-					V[i] = memory[I + i];
+				for (int i = 0; i < x + 1; i++) {
+					std::cout << "\n" << "Memory[I + " << i << "] = " << (int)memory[I + i];
+					V[i] = (int)memory[I + i];
+					std::cout << "V[" << i + I << "] = " << (int)memory[I + i];
 				}
+				break;
+			default:
 				break;
 			}
 		}
@@ -307,6 +319,11 @@ public:
 int main(int argc, char **argv) {
 	myChip myChip8;
 	init();
+	for (int i = 0; i < 64; i++) {
+		for (int i2 = 0; i2 < 32; i2++) {
+			gfx[i][i2] = false;
+		}
+	}
 	myChip8.loadGame("test.ch");
 	I = 10;
 	for (;;) {
