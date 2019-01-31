@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <bitset>
 #include <iostream>
+#include <chrono>
 #include <time.h>
 #include <string>
 #include <math.h>
@@ -61,7 +62,7 @@ void drawGraphics() {
 }
 void init() {
 	SDL_Init(SDL_INIT_EVERYTHING);
-	window = SDL_CreateWindow("Chip8", 100, 100, 640, 320, 0);
+	window = SDL_CreateWindow("Chip8", 100, 100, 640, 380, 0);
 	srand(time(NULL));
 	for (int i = 0; i < 4096; i++) {
 		memory[i] = 0;
@@ -73,6 +74,9 @@ void init() {
 		for (int i2 = 0; i2 < 32; i2++) {
 			gfx[i][i2] = false;
 		}
+	}
+	for (int i = 0; i < 16; i++) {
+		V[i] = 0;
 	}
 	for (int i = 0x200; i < 4096; i++) {
 		//std::cout << memory[i] << " ";
@@ -92,7 +96,59 @@ std::streampos fileSize(const char* filePath) {
 
 	return fsize;
 }
+char convertKeyCodeToChar(SDL_Keycode * kc) {
+	switch (*kc) {
+	case SDLK_0:
+		return '0';
+		break;
+	case SDLK_1:
+		return '1';
+		break;
+	case SDLK_2:
+		return '2';
+		break;
+	case SDLK_3:
+		return '3';
+		break;
+	case SDLK_4:
+		return '4';
+		break;
+	case SDLK_5:
+		return '5';
+		break;
+	case SDLK_6:
+		return '6';
+		break;
+	case SDLK_7:
+		return '7';
+		break;
+	case SDLK_8:
+		return '8';
+		break;
+	case SDLK_9:
+		return '9';
+		break;
+	case SDLK_a:
+		return 'a';
+		break;
+	case SDLK_b:
+		return 'b';
+		break;
+	case SDLK_c:
+		return 'c';
+		break;
+	case SDLK_d:
+		return 'd';
+		break;
+	case SDLK_e:
+		return 'e';
+		break;
+	case SDLK_f:
+		return 'f';
+		break;
+	}
 
+}
 
 class myChip {
 public:
@@ -104,7 +160,7 @@ public:
 		is.close();
 	}
 	void push(int c) {
-		std::cout << c;
+		//std::cout << c;
 		key[sp++] = c;
 	}
 	int pop() {
@@ -115,7 +171,7 @@ public:
 	void emulateCycle() {
 		opcode = (memory[pc] << 8);
 		opcode |= memory[pc + 1];
-		printf("%.4x\n", opcode);
+		//printf("%.4x\n", opcode);
 		int x = (opcode & 0x0F00) >> 8;
 		int y = (opcode & 0x00F0) >> 4;
 		//printf("%04x", opcode);
@@ -135,6 +191,7 @@ public:
 						gfx[i][i2] = false;
 					}
 				}
+				drawFlag = true;
 			}
 			else {
 				//does a bunch of shit I dont understand
@@ -222,6 +279,12 @@ public:
 		case 0xD:
 			// X V[opcode & 0x0F00 >> 8]  Y V[opcode & 0x00FF >> 4]
 		{
+
+			for (int i = 0; i < 64; i++) {
+				for (int i2 = 0; i2 < 32; i2++) {
+					gfx[i][i2] = false;
+				}
+			}
 			int height = opcode & 0x000F;
 			V[0xF] = 0;
 			for (int i = 0; i < height; i++) {
@@ -231,6 +294,7 @@ public:
 					if (b != gfx[(8 - i2) + V[x]][i + V[y]]) V[0xF] = 1;
 				}
 			}
+			drawFlag = true;
 		}
 		case 0xE:
 			switch (opcode & 0x00FF) {
@@ -238,19 +302,19 @@ public:
 			case 0xA1:
 			{
 				SDL_PollEvent(&eventS);
-				const char * c = SDL_GetKeyName(SDL_GetKeyFromScancode((SDL_Scancode)eventS.type));
-				char c2 = *c;
-				if (V[x] == c2) {
-					pc += 2;
+				if (eventS.type == SDL_KEYDOWN) {
+					std::cout << (int)convertKeyCodeToChar(&eventS.key.keysym.sym) << " =/= " <<(int) V[x];
+					if (V[x] == convertKeyCodeToChar(&eventS.key.keysym.sym)) pc += 2;
 				}
 				break;
 			}
 			case 0x9E:
 			{
 				SDL_PollEvent(&eventS);
-				const char * c = SDL_GetKeyName(SDL_GetKeyFromScancode((SDL_Scancode)eventS.type));
-				char c2 = *c;
-				if (V[x] != c2) pc += 2;
+				if (eventS.type == SDL_KEYDOWN) {
+					std::cout << (int)convertKeyCodeToChar(&eventS.key.keysym.sym) << " = " << (int)V[x];
+					if (V[x] != convertKeyCodeToChar(&eventS.key.keysym.sym)) pc += 2;
+				}
 				break;
 			}
 			}
@@ -261,12 +325,13 @@ public:
 				break;
 			case 0xA:
 			{
-				do {
+				SDL_StartTextInput();
+				do{
 					SDL_PollEvent(&eventS);
-				} while (eventS.type == NULL);
-				SDL_Keycode key = SDL_GetKeyFromScancode((SDL_Scancode)eventS.type);
-				const char * c = SDL_GetKeyName(key);
-				V[x] = *c;
+					if (eventS.type == SDL_KEYDOWN) {
+						V[x] = convertKeyCodeToChar(&eventS.key.keysym.sym);
+					}
+				} while (eventS.type != SDL_KEYDOWN);
 				break;
 			}
 			case 0x15:
@@ -278,12 +343,13 @@ public:
 			case 0x29:
 			{
 				int c = V[x];
-				I = memory[c * 5];
+				I = c * 5;
+				std::cout << c * 5;
 				break;
 			}
 			case 0x33:
 				memory[I] = V[x] / 100;
-				std::cout << "\n" << "memory[I] = " << (int)memory[I];
+				//std::cout << "\n" << "memory[I] = " << (int)memory[I];
 				memory[I + 1] = (V[x] / 10) % 10;
 				memory[I + 2] = (V[x] % 100) % 10;
 				break;
@@ -294,9 +360,9 @@ public:
 				break;
 			case 0x65:
 				for (int i = 0; i < x + 1; i++) {
-					std::cout << "\n" << "Memory[I + " << i << "] = " << (int)memory[I + i];
+					//std::cout << "\n" << "Memory[I + " << i << "] = " << (int)memory[I + i];
 					V[i] = (int)memory[I + i];
-					std::cout << "V[" << i + I << "] = " << (int)memory[I + i];
+					//std::cout << "V[" << i + I << "] = " << (int)memory[I + i];
 				}
 				break;
 			default:
@@ -309,7 +375,7 @@ public:
 		if (sound_timer > 0)
 		{
 			if (sound_timer == 1)
-				printf("BEEP!\n");
+				//printf("BEEP!\n");
 			--sound_timer;
 		}
 		pc += 2;
@@ -320,16 +386,24 @@ int main(int argc, char **argv) {
 	myChip myChip8;
 	init();
 	for (int i = 0; i < 64; i++) {
-		for (int i2 = 0; i2 < 32; i2++) {
+		for (int i2 = 0; i2 < 35; i2++) {
 			gfx[i][i2] = false;
 		}
 	}
 	myChip8.loadGame("test.ch");
-	I = 10;
+	std::chrono::milliseconds millis = std::chrono::duration_cast<std::chrono::milliseconds>(
+		std::chrono::system_clock::now().time_since_epoch());
 	for (;;) {
 		myChip8.emulateCycle();
-		if (myChip8.drawFlag)
+		if (myChip8.drawFlag) {
 			drawGraphics();
+			myChip8.drawFlag = false;
+		}
 	}
+	std::chrono::milliseconds newMillis = std::chrono::duration_cast<std::chrono::milliseconds>(
+		std::chrono::system_clock::now().time_since_epoch());
+	std::chrono::milliseconds i = newMillis - millis;
+	i = std::chrono::milliseconds(60) - i;
+	SDL_Delay(i.count());
 	return 0;
 }
