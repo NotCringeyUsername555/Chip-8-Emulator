@@ -13,10 +13,10 @@ unsigned char memory[4096];
 unsigned char V[16];
 unsigned short I;
 unsigned int pc = 0x200;
-bool gfx[64][32];
+bool gfx[65][32];
 unsigned short delay_timer;
 unsigned short sound_timer;
-unsigned short sp = 0;
+unsigned short sp;
 SDL_Renderer * render;
 SDL_Event eventS;
 int key[16];
@@ -45,11 +45,11 @@ void drawGraphics() {
 	SDL_SetRenderDrawColor(render, 255, 255, 255, 0);
 	SDL_RenderClear(render);
 	SDL_SetRenderDrawColor(render, 0, 0, 0, 0);
-	for (int i = 0; i < 64; i++) {
+	for (int i = 0; i < 65; i++) {
 		for (int i2 = 0; i2 < 32; i2++) {
 			if (gfx[i][i2]) {
 				SDL_Rect r;
-				r.x = i * 10;
+				r.x = i * 10 - 20;
 				r.y = i2 * 10;
 				r.w = 10;
 				r.h = 10;
@@ -61,6 +61,7 @@ void drawGraphics() {
 
 }
 void init() {
+	sp = 0;
 	SDL_Init(SDL_INIT_EVERYTHING);
 	window = SDL_CreateWindow("Chip8", 100, 100, 640, 380, 0);
 	srand(time(NULL));
@@ -70,7 +71,7 @@ void init() {
 	for (int i = 0; i < 80; i++) {
 		memory[i] = chip8_fontset[i];
 	}
-	for (int i = 0; i < 64; i++) {
+	for (int i = 0; i < 65; i++) {
 		for (int i2 = 0; i2 < 32; i2++) {
 			gfx[i][i2] = false;
 		}
@@ -94,62 +95,63 @@ std::streampos fileSize(const char* filePath) {
 	fsize = file.tellg() - fsize;
 	file.close();
 
-	return fsize;
+	return fsize; 
 }
 char convertKeyCodeToChar(SDL_Keycode * kc) {
 	switch (*kc) {
 	case SDLK_0:
-		return '0';
+		return 0;
 		break;
 	case SDLK_1:
-		return '1';
+		return 1;
 		break;
 	case SDLK_2:
-		return '2';
+		return 2;
 		break;
 	case SDLK_3:
-		return '3';
+		return 3;
 		break;
 	case SDLK_4:
-		return '4';
+		return 4;
 		break;
 	case SDLK_5:
-		return '5';
+		return 5;
 		break;
 	case SDLK_6:
-		return '6';
+		return 6;
 		break;
 	case SDLK_7:
-		return '7';
+		return  7;
 		break;
 	case SDLK_8:
-		return '8';
+		return 8;
 		break;
 	case SDLK_9:
-		return '9';
+		return 9;
 		break;
 	case SDLK_a:
-		return 'a';
+		return 10;
 		break;
 	case SDLK_b:
-		return 'b';
+		return 11;
 		break;
 	case SDLK_c:
-		return 'c';
+		return 12;
 		break;
 	case SDLK_d:
-		return 'd';
+		return 13;
 		break;
 	case SDLK_e:
-		return 'e';
+		return 14;
 		break;
 	case SDLK_f:
-		return 'f';
+		return 15;
 		break;
+	default:
+		return 'g';
 	}
 
 }
-
 class myChip {
 public:
 	bool drawFlag = true;
@@ -162,8 +164,11 @@ public:
 	void push(int c) {
 		//std::cout << c;
 		key[sp++] = c;
+		std::cout << "\n stack pointer - " << sp << std::endl;
+
 	}
 	int pop() {
+		std::cout << "\n stack pointer - " << sp << std::endl;
 		int c = key[--sp];
 		key[sp] = 0;
 		return c;
@@ -171,10 +176,10 @@ public:
 	void emulateCycle() {
 		opcode = (memory[pc] << 8);
 		opcode |= memory[pc + 1];
-		//printf("%.4x\n", opcode);
+		printf("%.4x\n", opcode);
+		std::cout << "\n stack pointer - " << sp << std::endl;
 		int x = (opcode & 0x0F00) >> 8;
 		int y = (opcode & 0x00F0) >> 4;
-		//printf("%04x", opcode);
 		//std::cout << "    " << pc << std::endl;
 		switch (opcode >> 12) {
 			//printf("%04x", opcode >> 12);
@@ -186,7 +191,7 @@ public:
 			}
 			//clears the screen
 			else if ((opcode & 0x00F0) == 0xE0) {
-				for (int i = 0; i < 64; i++) {
+				for (int i = 0; i < 65; i++) {
 					for (int i2 = 0; i2 < 32; i2++) {
 						gfx[i][i2] = false;
 					}
@@ -280,11 +285,6 @@ public:
 			// X V[opcode & 0x0F00 >> 8]  Y V[opcode & 0x00FF >> 4]
 		{
 
-			for (int i = 0; i < 64; i++) {
-				for (int i2 = 0; i2 < 32; i2++) {
-					gfx[i][i2] = false;
-				}
-			}
 			int height = opcode & 0x000F;
 			V[0xF] = 0;
 			for (int i = 0; i < height; i++) {
@@ -303,8 +303,7 @@ public:
 			{
 				SDL_PollEvent(&eventS);
 				if (eventS.type == SDL_KEYDOWN) {
-					std::cout << (int)convertKeyCodeToChar(&eventS.key.keysym.sym) << " =/= " <<(int) V[x];
-					if (V[x] == convertKeyCodeToChar(&eventS.key.keysym.sym)) pc += 2;
+					V[x] = convertKeyCodeToChar(&eventS.key.keysym.sym);
 				}
 				break;
 			}
@@ -312,8 +311,7 @@ public:
 			{
 				SDL_PollEvent(&eventS);
 				if (eventS.type == SDL_KEYDOWN) {
-					std::cout << (int)convertKeyCodeToChar(&eventS.key.keysym.sym) << " = " << (int)V[x];
-					if (V[x] != convertKeyCodeToChar(&eventS.key.keysym.sym)) pc += 2;
+					if (V[x] != (convertKeyCodeToChar(&eventS.key.keysym.sym))) pc += 2;
 				}
 				break;
 			}
@@ -385,14 +383,12 @@ public:
 int main(int argc, char **argv) {
 	myChip myChip8;
 	init();
-	for (int i = 0; i < 64; i++) {
-		for (int i2 = 0; i2 < 35; i2++) {
+	for (int i = 0; i < 65; i++) {
+		for (int i2 = 0; i2 < 32; i2++) {
 			gfx[i][i2] = false;
 		}
 	}
 	myChip8.loadGame("test.ch");
-	std::chrono::milliseconds millis = std::chrono::duration_cast<std::chrono::milliseconds>(
-		std::chrono::system_clock::now().time_since_epoch());
 	for (;;) {
 		myChip8.emulateCycle();
 		if (myChip8.drawFlag) {
@@ -400,10 +396,7 @@ int main(int argc, char **argv) {
 			myChip8.drawFlag = false;
 		}
 	}
-	std::chrono::milliseconds newMillis = std::chrono::duration_cast<std::chrono::milliseconds>(
-		std::chrono::system_clock::now().time_since_epoch());
-	std::chrono::milliseconds i = newMillis - millis;
-	i = std::chrono::milliseconds(60) - i;
-	SDL_Delay(i.count());
+
+	//SDL_Delay(i.count());
 	return 0;
 }
