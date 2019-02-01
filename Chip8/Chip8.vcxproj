@@ -126,9 +126,6 @@
   <ItemGroup>
     <ClCompile Include="emulation.cpp" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="..\x64\Debug\test.ch8" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

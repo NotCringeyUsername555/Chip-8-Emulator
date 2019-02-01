@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <bitset>
 #include <iostream>
-#include <chrono>
 #include <time.h>
 #include <string>
 #include <math.h>
@@ -13,10 +12,10 @@ unsigned char memory[4096];
 unsigned char V[16];
 unsigned short I;
 unsigned int pc = 0x200;
-bool gfx[65][32];
+bool gfx[64][32];
 unsigned short delay_timer;
 unsigned short sound_timer;
-unsigned short sp;
+unsigned short sp = 0;
 SDL_Renderer * render;
 SDL_Event eventS;
 int key[16];
@@ -45,11 +44,11 @@ void drawGraphics() {
 	SDL_SetRenderDrawColor(render, 255, 255, 255, 0);
 	SDL_RenderClear(render);
 	SDL_SetRenderDrawColor(render, 0, 0, 0, 0);
-	for (int i = 0; i < 65; i++) {
+	for (int i = 0; i < 64; i++) {
 		for (int i2 = 0; i2 < 32; i2++) {
 			if (gfx[i][i2]) {
 				SDL_Rect r;
-				r.x = i * 10 - 20;
+				r.x = i * 10;
 				r.y = i2 * 10;
 				r.w = 10;
 				r.h = 10;
@@ -61,9 +60,8 @@ void drawGraphics() {
 
 }
 void init() {
-	sp = 0;
 	SDL_Init(SDL_INIT_EVERYTHING);
-	window = SDL_CreateWindow("Chip8", 100, 100, 640, 380, 0);
+	window = SDL_CreateWindow("Chip8", 100, 100, 640, 320, 0);
 	srand(time(NULL));
 	for (int i = 0; i < 4096; i++) {
 		memory[i] = 0;
@@ -71,13 +69,10 @@ void init() {
 	for (int i = 0; i < 80; i++) {
 		memory[i] = chip8_fontset[i];
 	}
-	for (int i = 0; i < 65; i++) {
+	for (int i = 0; i < 64; i++) {
 		for (int i2 = 0; i2 < 32; i2++) {
 			gfx[i][i2] = false;
 		}
-	}
-	for (int i = 0; i < 16; i++) {
-		V[i] = 0;
 	}
 	for (int i = 0x200; i < 4096; i++) {
 		//std::cout << memory[i] << " ";
@@ -95,8 +90,9 @@ std::streampos fileSize(const char* filePath) {
 	fsize = file.tellg() - fsize;
 	file.close();
 
-	return fsize; 
+	return fsize;
 }
+
 char convertKeyCodeToChar(SDL_Keycode * kc) {
 	switch (*kc) {
 	case SDLK_0:
@@ -162,13 +158,10 @@ public:
 		is.close();
 	}
 	void push(int c) {
-		//std::cout << c;
+		std::cout << c;
 		key[sp++] = c;
-		std::cout << "\n stack pointer - " << sp << std::endl;
-
 	}
 	int pop() {
-		std::cout << "\n stack pointer - " << sp << std::endl;
 		int c = key[--sp];
 		key[sp] = 0;
 		return c;
@@ -177,9 +170,9 @@ public:
 		opcode = (memory[pc] << 8);
 		opcode |= memory[pc + 1];
 		printf("%.4x\n", opcode);
-		std::cout << "\n stack pointer - " << sp << std::endl;
 		int x = (opcode & 0x0F00) >> 8;
 		int y = (opcode & 0x00F0) >> 4;
+		//printf("%04x", opcode);
 		//std::cout << "    " << pc << std::endl;
 		switch (opcode >> 12) {
 			//printf("%04x", opcode >> 12);
@@ -191,12 +184,11 @@ public:
 			}
 			//clears the screen
 			else if ((opcode & 0x00F0) == 0xE0) {
-				for (int i = 0; i < 65; i++) {
+				for (int i = 0; i < 64; i++) {
 					for (int i2 = 0; i2 < 32; i2++) {
 						gfx[i][i2] = false;
 					}
 				}
-				drawFlag = true;
 			}
 			else {
 				//does a bunch of shit I dont understand
@@ -284,7 +276,6 @@ public:
 		case 0xD:
 			// X V[opcode & 0x0F00 >> 8]  Y V[opcode & 0x00FF >> 4]
 		{
-
 			int height = opcode & 0x000F;
 			V[0xF] = 0;
 			for (int i = 0; i < height; i++) {
@@ -294,24 +285,27 @@ public:
 					if (b != gfx[(8 - i2) + V[x]][i + V[y]]) V[0xF] = 1;
 				}
 			}
-			drawFlag = true;
 		}
 		case 0xE:
 			switch (opcode & 0x00FF) {
 
 			case 0xA1:
 			{
-				SDL_PollEvent(&eventS);
-				if (eventS.type == SDL_KEYDOWN) {
-					V[x] = convertKeyCodeToChar(&eventS.key.keysym.sym);
+				while (SDL_PollEvent(&eventS) != NULL) {
+					if (eventS.type == SDL_KEYDOWN) {
+						V[x] = convertKeyCodeToChar(&eventS.key.keysym.sym);
+						break;
+					}
 				}
 				break;
 			}
 			case 0x9E:
 			{
-				SDL_PollEvent(&eventS);
-				if (eventS.type == SDL_KEYDOWN) {
-					if (V[x] != (convertKeyCodeToChar(&eventS.key.keysym.sym))) pc += 2;
+				while (SDL_PollEvent(&eventS) != NULL) {
+					if (V[x] != convertKeyCodeToChar(&eventS.key.keysym.sym)) {
+						pc += 2;
+						break;
+					}
 				}
 				break;
 			}
@@ -323,8 +317,7 @@ public:
 				break;
 			case 0xA:
 			{
-				SDL_StartTextInput();
-				do{
+				do {
 					SDL_PollEvent(&eventS);
 					if (eventS.type == SDL_KEYDOWN) {
 						V[x] = convertKeyCodeToChar(&eventS.key.keysym.sym);
@@ -341,13 +334,12 @@ public:
 			case 0x29:
 			{
 				int c = V[x];
-				I = c * 5;
-				std::cout << c * 5;
+				I = memory[c * 5];
 				break;
 			}
 			case 0x33:
 				memory[I] = V[x] / 100;
-				//std::cout << "\n" << "memory[I] = " << (int)memory[I];
+				std::cout << "\n" << "memory[I] = " << (int)memory[I];
 				memory[I + 1] = (V[x] / 10) % 10;
 				memory[I + 2] = (V[x] % 100) % 10;
 				break;
@@ -358,9 +350,9 @@ public:
 				break;
 			case 0x65:
 				for (int i = 0; i < x + 1; i++) {
-					//std::cout << "\n" << "Memory[I + " << i << "] = " << (int)memory[I + i];
+					std::cout << "\n" << "Memory[I + " << i << "] = " << (int)memory[I + i];
 					V[i] = (int)memory[I + i];
-					//std::cout << "V[" << i + I << "] = " << (int)memory[I + i];
+					std::cout << "V[" << i + I << "] = " << (int)memory[I + i];
 				}
 				break;
 			default:
@@ -373,7 +365,7 @@ public:
 		if (sound_timer > 0)
 		{
 			if (sound_timer == 1)
-				//printf("BEEP!\n");
+				printf("BEEP!\n");
 			--sound_timer;
 		}
 		pc += 2;
@@ -383,20 +375,17 @@ public:
 int main(int argc, char **argv) {
 	myChip myChip8;
 	init();
-	for (int i = 0; i < 65; i++) {
+	for (int i = 0; i < 64; i++) {
 		for (int i2 = 0; i2 < 32; i2++) {
 			gfx[i][i2] = false;
 		}
 	}
 	myChip8.loadGame("test.ch");
+	I = 10;
 	for (;;) {
 		myChip8.emulateCycle();
-		if (myChip8.drawFlag) {
+		if (myChip8.drawFlag)
 			drawGraphics();
-			myChip8.drawFlag = false;
-		}
 	}
-
-	//SDL_Delay(i.count());
 	return 0;
 }
